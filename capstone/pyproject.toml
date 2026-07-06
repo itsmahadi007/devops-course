@@ -1,0 +1,13 @@
+[project]
+name = "capstone"
+version = "0.1.0"
+description = "The app this course practices DevOps on — evolves every section"
+requires-python = ">=3.14"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn>=0.34",
+    "redis>=5.2",
+]
+
+[tool.uv]
+package = false

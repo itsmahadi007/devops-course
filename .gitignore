@@ -1,0 +1,21 @@
+# Secrets — public repo, never commit these
+.env
+.env.*
+vps-lab/keys/
+*.pem
+id_ed25519*
+!*.pub
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
+
+# Claude Code local settings
+.claude/settings.local.json
