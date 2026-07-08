@@ -1,0 +1,8 @@
+services:
+  vps:
+    build: .
+    container_name: vps-lab   # fixed name — infrastructure gets a stable name, no project prefix
+    hostname: vps-lab         # what you'll see in the shell prompt after login
+    ports:
+      - "9022:22"             # host 9022 (our 9000-series rule) → container's conventional 22
+    restart: unless-stopped   # NEW concept — see below
