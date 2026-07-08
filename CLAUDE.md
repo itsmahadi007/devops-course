@@ -21,19 +21,21 @@ A progressive, hands-on course. Each section: **read** (`README.md` lesson) → 
 
 | # | Section | Status |
 |---|---------|--------|
-| 01 | docker-deep | **written — in progress** |
-| 02 | github-actions | stub |
-| 03 | linux-networking | stub |
-| 04 | kubernetes-core | stub |
-| 05 | helm | stub |
-| 06 | terraform | stub |
-| 07 | aws-core | stub |
-| 08 | observability | stub |
-| 09 | gitops-argocd | stub |
-| 10 | llm-serving | stub |
-| 11 | cert-prep | stub |
+| 01 | docker-deep | **written — in progress** (Labs 1–6 done; awaiting checkpoint + own-words notes to close the gate) |
+| 02 | github-actions | written (ahead — revisit vs his notes when he reaches it) |
+| 03 | linux-networking | written (ahead — revisit vs his notes when he reaches it) |
+| 04 | kubernetes-core | written (ahead — revisit vs his notes when he reaches it) |
+| 05 | helm | written (ahead — revisit vs his notes when he reaches it) |
+| 06 | terraform | written (ahead — revisit vs his notes when he reaches it) |
+| 07 | aws-core | written (ahead — revisit vs his notes when he reaches it) |
+| 08 | observability | written (ahead — revisit vs his notes when he reaches it) |
+| 09 | gitops-argocd | written (ahead — revisit vs his notes when he reaches it) |
+| 10 | llm-serving | written (ahead — revisit vs his notes when he reaches it) |
+| 11 | cert-prep | written (ahead — revisit vs his notes when he reaches it) |
 
 **Update this table** when a section is completed or written.
+
+> **Deviation logged (2026-07-09):** Sections 02–11 were authored ahead of need in one batch (10 parallel Opus agents), at Mahadi's explicit request — limited-window access to the strongest authoring model. This overrode progressive-protocol rule #3 ("never write sections ahead of need") as a one-time, consciously-accepted trade. The cost: these sections could not be adapted to notes he hadn't written yet. Mitigations already in place — every section is pinned to `docs/curriculum-spec.md` (the cross-section contract: port blocks, inherited/left-behind state, tool decisions) and is fully self-teaching (pre-explained outputs, embedded collapsible answers) so he can complete them without a strong model on hand. **When he actually reaches a written-ahead section, still run the progressive protocol against it** — read his prior notes, then deepen/trim that section to match where he struggled. `TODO.md` tracks this revisit obligation.
 
 ## Progressive protocol (MANDATORY for every session)
 

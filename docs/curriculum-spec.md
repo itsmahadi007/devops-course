@@ -1,0 +1,86 @@
+# Curriculum master spec (sections 02–11)
+
+**Why this exists:** sections 02–11 were generated ahead of need on 2026-07-08 (deviation from the one-section-at-a-time protocol, at Mahadi's explicit request — limited access to the strongest authoring model). This spec pins every cross-section interface so independently-authored sections stay coherent, and so future revision sessions know what was decided and why. When a section is revised after Mahadi's notes come in, **this file is the contract to keep or consciously amend.**
+
+## Non-negotiable invariants (apply to every section)
+
+1. **$0 and local.** Everything runs on this Mac (Apple Silicon, Docker Desktop, zsh, uv). GitHub free tier (Actions minutes on public repos, GHCR public packages) counts as $0. Real-cloud labs exist only as clearly-marked **OPTIONAL** extras with same-day teardown.
+2. **Style contract** — copy the voice and structure of `section-01-docker-deep/` (read its README + labs 3 and 6 before writing anything):
+   - Lesson README: mental model first → why it matters in DevOps jobs/interviews → progress checkboxes for its labs → curated official-docs links (few, no dumps).
+   - Every lab: `# Lab N — title` → **Goal** → **"The mental map (read this first)"** with an ASCII diagram → **Steps** (copy-paste-able for macOS/zsh, each command's expected output pre-explained BEFORE he runs it) → **Verify** (a command whose output proves it worked + 2-4 "answer aloud" questions, each with `<details><summary>Answer (read after attempting aloud)</summary>…</details>`) → **Clean up**.
+   - Easy words first, jargon second. Analogies like Section 1's ("sticky notes", "ladder", "knock on the door"). He's a senior backend engineer — never explain Python/APIs/git basics; DO explain ops concepts from first principles.
+   - These sections must be **fully self-teaching**: he may work through them without a strong model available. Pre-explain every expected output, pre-explain the 2-3 most likely failure modes per lab ("If you see X…"), embed all answers collapsibly.
+3. **Host ports: 9000-series only** (his real dev stack owns 8000-series, 5433, 5678–5690, 6379, 6432). Container-side ports stay conventional. **Per-section host-port blocks — never leave your block:**
+   - S1 (done): 9000 (compose api), 9006, 9022 (vps-lab SSH — permanent)
+   - S2: 9030–9039 · S3: 9040–9049 · S4: 9050–9059 · S5: 9060–9069 · S6: 9070–9079 · S7: 9080–9089 · S8: 9090–9099 · S9: 9100–9109 · S10: 9110–9119
+4. **Do not pre-create or edit files outside your section folder.** Labs *contain* the full file contents Mahadi will create in `capstone/`, `vps-lab/`, `.github/workflows/`, `infra/` — he types/pastes them during the lab; that evolution IS the curriculum. Exception: none. Also never touch root `CLAUDE.md`, root `README.md`, or other sections.
+5. **Each section folder gets exactly:** `README.md` (full lesson, overwrite the stub), `labs/lab-NN-slug.md` (5–7 labs; S11 differs, see below), `notes.md` (template matching section-01's: per-lab digest headings left absent — digests are appended during live sessions — plus the five own-words sections), `checkpoint.md` (practical tasks + explain-aloud items + the same Gate block as section-01's).
+6. **Latest stable versions** of every tool, stated explicitly in the lesson with install command (`brew install …`). No deprecated flags.
+7. **No secrets ever** — public repo. Placeholders only; `.gitignore` already covers `vps-lab/keys/`, `.env`.
+8. **Continuity hooks:** open each README with 2-3 sentences connecting to what the previous section left behind; close with what the next section picks up. Reference section-01 concepts by their established names (cache ladder, sticky-note tags, PID 1 rules, healthcheck stamp, 12-factor env).
+
+## State after Section 1 (what every section may assume exists)
+
+- `capstone/` — FastAPI app (`/health`, `/visits` via Redis, `/ask` canned placeholder awaiting S10). Multi-stage `Dockerfile` (uv, non-root `appuser` UID 1000, healthcheck, 220MB/47MB), `Dockerfile.naive` (teaching foil), `.dockerignore`, `uv.lock`, `docker-compose.yml` (api 9000:8000 + redis + postgres:18-alpine with `pgdata` volume at `/var/lib/postgresql`, healthcheck-gated depends_on, log rotation).
+- `vps-lab/` — Debian-slim + sshd container, key-only auth (`vps-lab/keys/vps_key`), host port 9022, `restart: unless-stopped`, user `mahadi` with sudo. No Docker inside it yet.
+- GHCR: `ghcr.io/itsmahadi007/capstone` public, tags `0.1.0`/`latest`, **arm64-only** (the S2 hook).
+- Repo `devops-course` on GitHub under `itsmahadi007`, public. Workflows will live at repo root `.github/workflows/`.
+- He knows deeply (from S1 notes digests): layers/content-addressing, PID 1/signals, cache ordering, multi-stage, non-root, healthchecks, compose DNS/gating/volumes/logging, SSH trust in both directions, registries/digests/authn-vs-authz.
+
+## Per-section specs
+
+### S2 — CI/CD with GitHub Actions
+- **Arc:** every push runs test → build → push to GHCR automatically; a deploy job ships to vps-lab over SSH. Fixes S1's arm64-only catch with a multi-arch build.
+- **Labs:** (1) workflow anatomy — events/jobs/steps/runners, a hello workflow, reading the Actions UI; (2) lint+test job for capstone (uv, ruff, pytest — add a minimal test in the lab), path filters, matrix; (3) build+push to GHCR with `GITHUB_TOKEN` + `docker/metadata-action` tags (sha + semver), permissions block (ties to Lab 6's scopes lesson); (4) buildx cache (`type=gha`) + **multi-arch** (amd64+arm64) — closes the `exec format error` debt; (5) **self-hosted runner** on the Mac (GitHub-hosted runners can't reach a container on his laptop — teach WHY, NAT/firewall reality, then register a runner with labels); (6) deploy job: runner SSHes into vps-lab (key from repo secret — lab uses a dedicated deploy key, never his personal one), installs Docker **inside** vps-lab first (guided `apt install docker.io` step + compose change: vps-lab needs `privileged: true` — explain DinD honestly), `docker pull` + `docker run -d -p 8080:8000` inside; vps-lab compose publishes `9030:8080`. Chain: Mac:9030 → vps-lab:8080 → inner container:8000. (7 optional short) branch protection + required checks.
+- **Leaves behind:** `.github/workflows/ci.yml` (+deploy), multi-arch `ghcr.io/itsmahadi007/capstone`, self-hosted runner, Docker-capable vps-lab, capstone `tests/` + ruff config.
+
+### S3 — Linux & Networking (inside vps-lab)
+- **Arc:** the fake VPS becomes a real ops sandbox: filesystem/permissions/processes → networking tools → nginx reverse proxy + TLS in front of the deployed capstone. Assume S2 done (capstone container runs inside vps-lab).
+- **Labs:** (1) filesystem + permissions deep dive (extends S1's owner/rulebook: chmod octal, sticky bit, setuid, find by perm); (2) processes & signals from the ops side (ps/top/kill, /proc, nohup, exit codes revisited); (3) networking toolbox — ip/ss/curl/dig/nc inside vps-lab: interfaces, routes, listening sockets, who owns which port (`cap_add: NET_ADMIN` on vps-lab if a lab needs it — state it in the lab's compose edit); (4) nginx reverse proxy in front of the capstone container (proxy_pass to 127.0.0.1:8080, headers, access logs) — publish `9040:80`; (5) TLS from first principles + self-signed cert + nginx HTTPS on `9041:443` (chain of trust, SANs, why the browser warns, where Let's Encrypt would slot in on a real box — OPTIONAL real-domain extra); (6) iptables/nftables basics — read rules, add a block rule, understand Docker's chains (careful: inside vps-lab, not on the host).
+- **Leaves behind:** vps-lab with nginx+TLS fronting the capstone; his fluency for CKA's linux-y bits.
+
+### S4 — Kubernetes Core
+- **Arc:** same capstone stack, now on a real local cluster. Compose file → manifests, healthchecks → probes, DNS habits transfer.
+- **Tooling decision (pinned):** **kind** (`brew install kind kubectl`) — CI-friendly, multi-node capable, disposable. Cluster config maps ingress host ports into the 9050 block.
+- **Labs:** (1) cluster up + mental map (control plane/kubelet/etcd as concepts, nodes-as-containers, `kubectl get/describe/explain`); (2) pods & deployments — run capstone from GHCR (multi-arch now — why kind's amd64/arm64 node just works), replicas, rollout/rollback, self-healing demo (kill a pod, watch the reconcile loop he met in S1 Lab 4); (3) services & DNS (ClusterIP/NodePort, kube-dns vs compose DNS, port-forward via `9050`); (4) config & secrets (ConfigMap/Secret → env, REDIS_URL wiring, why Secrets aren't secret without extra work); (5) probes + resources (liveness/readiness/startup mapped from the Docker healthcheck, requests/limits, OOMKilled = 137 callback); (6) redis + postgres in-cluster (Deployment vs StatefulSet intuition, PVC for pgdata — the S1 volume lesson at cluster scale); (7) Ingress (ingress-nginx on kind, host port `9051`, path routing to the api).
+- **Leaves behind:** `capstone/k8s/` raw manifests (created BY HIM in labs), a kind cluster config in section folder, CKA foundation.
+
+### S5 — Helm
+- **Arc:** the S4 manifests parameterized into a chart; releases/upgrades/rollbacks; values per environment.
+- **Labs:** (1) consume a community chart first (bitnami redis or similar) — values.yaml archaeology, `helm template` to see generated YAML; (2) scaffold `capstone/chart/` from the S4 manifests (`helm create` then strip), templates + `values.yaml`; (3) template language essentials (values/defaults/if/range/helpers, `helm template`/`--dry-run` as the debugging loop); (4) release lifecycle — install/upgrade/rollback/history, what a revision actually stores; (5) values layering (base + `values-local.yaml`, image tag override — the knob CI/GitOps will turn in S9), chart in the repo as the deployable artifact.
+- **Leaves behind:** `capstone/chart/` (his hands), the interface S9's Argo CD points at.
+
+### S6 — Terraform
+- **Arc:** infrastructure as code fundamentals with real state management, $0: Docker provider recreates vps-lab + capstone stack as code; kubernetes/helm providers manage kind.
+- **Labs:** (1) init/plan/apply/destroy loop with the Docker provider (an nginx container on `9070`) — HCL anatomy, the state file opened and read; (2) recreate the capstone compose stack in TF (images, network, volume, containers) — compare `terraform plan` diffing to compose's reconcile; (3) variables/outputs/locals + `terraform.tfvars`, drift detection (hand-delete a container, plan shows it); (4) modules — extract a reusable `service` module; (5) kubernetes+helm providers: TF installs the capstone chart on kind (who owns what: TF vs Helm vs Argo — the S9 tension, named now); (6) state deep dive — remote state concepts, locking, `import`, when NOT to use TF (OPTIONAL marked extra: S3 bucket backend on real AWS with same-day teardown).
+- **Leaves behind:** `infra/terraform/` (his hands), state-file literacy for interviews.
+
+### S7 — AWS Core
+- **Arc:** SAA-aligned AWS mental models with LocalStack for hands-on, real console only as OPTIONAL free-tier extras. Position: he already ships on EC2/S3 — this section systematizes.
+- **Tooling (pinned):** LocalStack in Docker, host port `9080:4566`; `awslocal` implemented as a shell alias to `aws --endpoint-url=http://localhost:9080` with fake creds (NOT the `awscli-local` pip package — it defaults to port 4566 and would silently miss our 9080 mapping). **Reality correction (verified 2026-07-09 during S7 authoring):** LocalStack *Community Edition* was discontinued (2026.03) and now needs an auth token. The section uses the free **Hobby tier** (free account, no credit card) instead, which covers exactly the hands-on labs — IAM, S3, EC2, VPC — while RDS/ElastiCache/ALB/ASG stay paper/theory, matching the lab split anyway. `moto`/no-account fallbacks noted for the fully-offline case.
+- **Labs:** (1) IAM from first principles — users/roles/policies, policy JSON reading drills, least-privilege for the CI push (ties to S2's GITHUB_TOKEN scoping); (2) S3 + lifecycle + presigned URLs on LocalStack; (3) VPC on paper + LocalStack: subnets, route tables, IGW/NAT, security groups vs NACLs (map every concept to what he saw with Docker networks/iptables in S3); (4) EC2/ALB/ASG as theory-with-diagrams + LocalStack where supported, when-to-use-what decision drills; (5) RDS/ElastiCache vs self-managed (his Postgres/Redis knowledge → managed-service tradeoffs), backup/multi-AZ/read-replica concepts; (6) SAA drill lab — scenario questions in checkpoint style, cost-model reasoning (the exam's real skill).
+- **Leaves behind:** SAA scaffolding; S11 finishes the cert.
+
+### S8 — Observability
+- **Arc:** the capstone stack gets real eyes: metrics (Prometheus+Grafana), logs (Loki), the S1 Lab 4 "logs die with containers" debt paid.
+- **Ports:** prometheus `9090:9090`, grafana `9091:3000`, loki unpublished (compose DNS), capstone metrics via existing api port.
+- **Labs:** (1) instrument capstone — `prometheus-fastapi-instrumentator`, `/metrics` read line by line (counters/gauges/histograms, labels, cardinality warning); (2) Prometheus in the compose stack — scrape configs, targets UI, PromQL basics (rate(), histogram_quantile()); (3) Grafana — datasource + a dashboard built by hand (latency/RPS/error-rate = RED method), one alert rule; (4) Loki + alloy/promtail shipping container logs, LogQL, logs↔metrics correlation ("the postgres-18 lecture would have survived `down` here"); (5) SLO thinking — golden signals, burn rates lite, what to page on (interview gold); (6) same stack on kind via kube-prometheus-stack chart (S5 skills reused) — OPTIONAL if heavy on the Mac.
+- **Leaves behind:** compose observability overlay (his hands, in `capstone/` per labs), dashboards-as-JSON in section folder.
+
+### S9 — GitOps (Argo CD)
+- **Arc:** the repo becomes the source of truth; Argo CD on kind continuously syncs the capstone chart; CI stops pushing to the cluster and starts pushing to git.
+- **Labs:** (1) GitOps mental model — push vs pull deploys, why prod credentials leave CI, drift as a first-class citizen; (2) install Argo CD on kind, UI via port-forward `9100`, app pointing at `capstone/chart/`; (3) sync policies — manual → auto + prune + self-heal; hand-edit the cluster and watch it get reverted (the reconcile loop, final form); (4) the full loop: change values in git → PR → merge → Argo rolls it out; image-tag bump strategy (CI updates values via PR — lab implements the simple variant); (5) app-of-apps + environments layout (staging/prod values), secrets-in-git problem stated honestly (sealed-secrets/SOPS survey, one implemented small).
+- **Leaves behind:** `gitops/` layout in repo (his hands), end-to-end story: push → CI builds/pushes image → PR bumps chart → Argo deploys.
+
+### S10 — LLM Serving Infrastructure
+- **Arc:** `/ask` gets a real self-hosted model; serving fundamentals (the AI-infra differentiator: his backend+AI + this course's infra).
+- **Tooling (pinned):** llama.cpp via `llama-server` (OpenAI-compatible, Metal-accelerated, tiny models fine on the Mac) — teach Ollama as the convenience layer over the same idea. Model: Qwen 3 smallest instruct GGUF (or current best ~1B; agent picks latest, states how to swap). Host port `9110`.
+- **Labs:** (1) quantization + GGUF mental model (weights → RAM math he can do on napkin), run llama-server bare, hit it with curl (OpenAI schema); (2) wire capstone `/ask` → the server (env-configured base URL — 12-factor again), streaming vs non-streaming, timeouts/retries (LLM calls are slow IO — backend instincts apply); (3) containerize the model server — the model-file problem (bake vs mount vs init-download tradeoffs, image size reality), compose service with the api; (4) serving concepts that interviews probe: batching/continuous batching, KV cache, tokens/sec vs TTFT, vLLM/TGI/SGLang survey (theory — they're CUDA-first; llama.cpp IS the Apple-silicon path), GPU capacity napkin math; (5) observability for LLM serving — token counters/latency histograms into the S8 stack, cost metering (he built this at ApplyFuel — connect it); (6) on kind: model server as a Deployment with resource limits + the chart grows an `llm` subchart or dependency.
+- **Leaves behind:** capstone with a real `/ask`, the flagship demo: "self-hosted LLM behind my own GitOps-deployed platform."
+
+### S11 — Cert Prep + Market Entry
+- **Different shape — no infra labs.** Files: README (strategy), `cka-plan.md`, `saa-plan.md`, `market-entry.md`, `checkpoint.md`, `notes.md`.
+- **CKA:** map every exam domain → where this course already covered it → gap list; killer.sh strategy; kubectl speed drills (imperative commands, `--dry-run=client -o yaml` reflexes); a 4-week schedule.
+- **SAA:** S7 gap coverage, question-bank strategy, the cost/scenario reasoning drills.
+- **Market entry:** two CV variants (backend-led with DevOps, DevOps-led with AI-infra framing) — concrete bullet drafts pulling from this repo's artifacts; the AI-infra/MLOps positioning (per `docs/why-this-course.md`); freelance/contract infra-gig entry (profiles, first-gig strategy); LinkedIn posting plan hooks (see repo `TODO.md`); interview story bank — each section's checkpoint becomes STAR stories.
+- **Gate:** cert exam readiness checklists instead of lab verifies.
