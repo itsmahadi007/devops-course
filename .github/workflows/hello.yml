@@ -1,7 +1,7 @@
 name: hello                    # display name in the Actions tab
 
 on:                            # the doorbells this workflow answers
-  push:                        # any push, any branch (we'll narrow this later)
+  # push:                        # any push, any branch (we'll narrow this later)
   workflow_dispatch:           # ...plus a manual "Run workflow" button
 
 jobs:
