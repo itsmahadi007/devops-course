@@ -77,6 +77,21 @@
 - **Env vars are stamped at container CREATION.** stop/start — and even `docker compose restart` — keep the old `.env` values; only `up -d` recreates on a config diff. Verify what a running container really has: `docker inspect vps-lab --format '{{.Config.Env}}'`.
 - **PATH anatomy** (the one env var debian ships): six dirs = {`/usr/local`, `/usr`, `/`} × {`bin`, `sbin`}. `sbin` = admin/system tools (why commands "don't exist" for normal users), `/usr/local` = hand-installed software apt never touches — listed first so it wins. Order = priority, left to right; modern Debian symlinks `/bin` → `/usr/bin`. Lab 3's `ENV PATH` venv trick is this exact mechanism: prepend a folder so *your* python wins.
 
+## Lab 6 digest (session summary)
+
+**Done 2026-07-08.** The one-liners worth keeping:
+
+- **Registry = content-addressed warehouse + phone book.** Same system as git, new words: digest ↔ commit sha (immutable, IS the hash), tag ↔ branch (re-stickable sticky note), registry ↔ remote. Full name anatomy: `ghcr.io/itsmahadi007/capstone:0.1.0` = host/owner/name:tag; silent defaults everyone relies on: no host → `docker.io`, no tag → `:latest`.
+- **`Login Succeeded` proves less than it looks (hit live).** Login checks *authentication* only ("is this token real?"); *authorization* (scopes) is checked at the moment of the action — push failed `permission_denied` because the gh token lacked `write:packages`. authn = who you are (401s), authz = what you may do (403s). Fix: `gh auth refresh -s write:packages` — and that mints a **new** token, so `docker login` again (the old one is cached in Docker's credential store).
+- **Two pushes, one content:** first = 8 layers Pushed (what travels is the *compressed* content — Lab 3's 47.2MB, not 220MB); second = all `Layer already exists`, only the `:latest` sticky note written. Both ended with the identical digest.
+- **The digest is the hash of the *manifest*** — the tiny JSON table-of-contents (`size: 856` bytes) listing the layer hashes. And it matched my local IMAGE ID (`0ebf4bd4e3dc…`): Docker Desktop's containerd store uses the manifest digest as the image ID — content addressing end to end, my machine and the registry call the image by the same name.
+- **Pull by digest can never surprise you.** `@sha256:…` instead of `:tag`; either the bytes hash to exactly that name or the pull fails — the defense against Lab 3's moved-`:latest` bite. Output was deliberately boring: `Image is up to date`, nothing downloaded. Digest refs work in `pull`/`run`/`FROM` but add no local tag. BuildKit already does this silently: `FROM debian:12-slim@sha256:60eac7…` in every build log.
+- **`rmi` on a multi-named image = peeling sticky notes.** Four `Untagged:` lines — the digest reference counts as a name too — then ONE `Deleted:` when the last name went. But the layers mostly *survived*: `capstone-api:latest` (Lab 4 compose build) shares them by content hash, so the follow-up "fresh" pull downloaded exactly one missing blob and re-linked the rest. Checkpoint Q3, observed live and one level deeper.
+- **The round-trip proved the package is genuinely public:** `docker logout` → anonymous pull → run → `{"status":"ok"}` on host port 9006 (compose stack owns 9000). That pull command now works on any machine on earth…
+- **…any *arm64* machine.** Laptop build = arm64-only; an x86 VPS pulls it fine then dies at startup with `exec format error`. One of the quiet reasons for "build in CI, not on laptops" — Section 2 fixes this.
+- **You can't sticky-note nothing:** `docker tag` needs the source image to exist (`No such image` otherwise) — here `capstone:0.1.0` existed since Lab 3. Reverse trick in cleanup: retag the pulled `ghcr.io/...` image back to `capstone:0.1.0` — restore a name from existing content instead of rebuilding. Content is what exists; names are free.
+- **GHCR housekeeping:** new packages default private; visibility toggle hides at the bottom of Package settings in the **Danger Zone** (same class of action as making a repo public). Stay logged out — Section 2's CI authenticates with its own short-lived `GITHUB_TOKEN`, never a personal one.
+
 ## What clicked
 
 -

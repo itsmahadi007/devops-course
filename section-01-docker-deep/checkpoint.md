@@ -57,6 +57,15 @@ Pass every task **from memory** — no peeking at the labs. If you have to peek,
 - [ ] `compose up` vs `compose start`: declarative vs imperative — what does each do in every possible starting state, why is `up -d` the always-safe habit, and which two tools in later sections work on the same principle?
 - [ ] Read `PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin` aloud: `bin` vs `sbin`, what `/usr/local` is reserved for, what decides which of two same-named binaries wins, and how a Dockerfile venv exploits that.
 
+### Added after Lab 6 (session went deeper here)
+
+- [ ] `docker login` said `Login Succeeded`, yet the push failed `permission_denied` — what did login actually verify, when are scopes checked, and why does `gh auth refresh -s write:packages` force a *second* `docker login`? (Bonus: which HTTP codes map to authn vs authz failures?)
+- [ ] The push ended with `digest: sha256:… size: 856`. What exactly is that digest a hash *of*, what's inside those 856 bytes, and why did it equal your local IMAGE ID?
+- [ ] `docker rmi` printed four `Untagged:` lines but the follow-up "fresh" pull downloaded only one blob. What counted as the fourth name, when does `Deleted:` actually appear, and which other image kept the layers alive — by what mechanism?
+- [ ] Pulling by `@sha256:…` printed `Image is up to date` and downloaded nothing. Why can a digest pull never surprise you, where do digest refs work (`pull`/`run`/`FROM`), and what do they *not* create locally?
+- [ ] `docker tag A B` fails with `No such image`. Why does tagging require existing content, and how does the same idea let you restore `capstone:0.1.0` after deleting it — without rebuilding?
+- [ ] Your GHCR image runs on any Mac but would crash on a rented x86 VPS. With what exact error, why, and what's the standard fix (Section 2 spoiler)?
+
 ## Gate
 
 - [ ] `notes.md` filled in my own words
