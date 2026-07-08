@@ -1,0 +1,41 @@
+services:            # each entry = one container Docker will run and babysit
+
+  api:               # ── your capstone, built from the Lab 3 Dockerfile ──
+    build: .         # "don't pull an image — build one from the Dockerfile in this folder"
+    ports:
+      - "9000:8000"  # host:container — ONLY the api gets a door to your Mac
+    environment:     # env vars injected at start — config lives here, not baked into the image
+      REDIS_URL: redis://redis:6379/0   # hostname "redis" = the service below (compose DNS)
+    depends_on:      # start order: bring these up first, and…
+      redis:
+        condition: service_healthy      # …wait until redis ANSWERS, not merely exists
+      db:
+        condition: service_healthy
+    logging:         # cap the on-disk log file so it can never fill the disk
+      driver: json-file
+      options:
+        max-size: "10m"   # rotate the file at 10MB
+        max-file: "3"     # keep max 3 rotated files → hard 30MB cap for this container
+
+  redis:             # ── the cache; this name doubles as its DNS hostname ──
+    image: redis:8-alpine       # pulled, not built — and no ports: → invisible to the host
+    healthcheck:                # the redis image ships no healthcheck, so we add one here
+      test: ["CMD", "redis-cli", "ping"]   # exec form; redis answers PONG when actually ready
+      interval: 5s   # probe every 5 seconds
+      timeout: 3s    # a probe that hangs longer than 3s counts as a fail
+      retries: 5     # 5 consecutive fails → status flips to unhealthy
+      
+  db:                # ── the database; hostname "db" on the network ──
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_PASSWORD: localdev   # local lab only — never a real secret
+    volumes:
+      - pgdata:/var/lib/postgresql   # 18+ rule: mount HERE, not .../data — image keeps data in a version subdir
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]   # CMD-SHELL = run through a shell (see below)
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  pgdata:            # declare the named volume — Docker creates and owns it; it outlives containers

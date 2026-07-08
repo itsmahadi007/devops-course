@@ -15,3 +15,4 @@ curl localhost:8000/health
 
 **Evolution log** (updated as sections complete):
 - Section 0: born. Bare `uv run`.
+- Section 1 (labs 2–4): containerized. Multi-stage slim non-root healthy image (`Dockerfile`; `Dockerfile.naive` kept as the measured anti-example) + compose stack — api + redis + postgres 18, healthcheck-gated startup, service DNS, named volume for the db only, capped json-file logs. Host port 9000.
