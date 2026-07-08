@@ -1,5 +1,5 @@
 [project]
-name = "capstone"
+name = "capstone-devops"
 version = "0.1.0"
 description = "The app this course practices DevOps on — evolves every section"
 requires-python = ">=3.14"

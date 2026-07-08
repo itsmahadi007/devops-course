@@ -33,7 +33,7 @@ wheels = [
 ]
 
 [[package]]
-name = "capstone"
+name = "capstone-devops"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
