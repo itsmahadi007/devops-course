@@ -48,6 +48,15 @@ Pass every task **from memory** — no peeking at the labs. If you have to peek,
 - [ ] Where does a container's log line physically live? Name the two default-config risks (and the fix for each).
 - [ ] You added a `logging:` block and ran `up -d` — why did compose *recreate* the api container instead of editing it live, and why did redis/db stay untouched? What bigger idea (Section 4 spoiler) is that reconcile behavior?
 
+### Added after Lab 5 (session went deeper here)
+
+- [ ] The two directions of trust in one SSH connection: which key proves what, where each side records the other (`known_hosts` vs `authorized_keys`), and which of the two steps TOFU belongs to.
+- [ ] `REMOTE HOST IDENTIFICATION HAS CHANGED` — its two readings, why a rebuild triggers it but `down`/`up` doesn't (where is the host key born?), and the one-line fix.
+- [ ] A file you created inside a container survives `stop`/`start` with no volume mounted. Where does it physically live, which two commands DO destroy it, and which command lists exactly what changed vs the image?
+- [ ] You edited `.env` and ran `docker compose restart` — does the container see the new value? When is env stamped into a container, which command actually applies the change, and how do you inspect what a running container really has?
+- [ ] `compose up` vs `compose start`: declarative vs imperative — what does each do in every possible starting state, why is `up -d` the always-safe habit, and which two tools in later sections work on the same principle?
+- [ ] Read `PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin` aloud: `bin` vs `sbin`, what `/usr/local` is reserved for, what decides which of two same-named binaries wins, and how a Dockerfile venv exploits that.
+
 ## Gate
 
 - [ ] `notes.md` filled in my own words

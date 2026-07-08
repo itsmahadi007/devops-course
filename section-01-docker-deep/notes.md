@@ -63,6 +63,20 @@
 - **Log slicing flags:** `-t` engine timestamps (one clock across services — trust for cross-service ordering), `--since 10m` / `--until` incident windows, `logs -f api db` subset follow, `--no-log-prefix` for clean grep/jq pipes.
 - **Misc:** `CMD` vs `CMD-SHELL` in healthchecks — shell form is harmless here (no PID 1/signals involved) · `psql` version line read: `aarch64` = native ARM build, `linux-musl` = Alpine's libc (that's literally what `-alpine` means) · `docker compose ps` = `docker ps` scoped to the project.
 
+## Lab 5 digest (session summary)
+
+**Done 2026-07-08.** The one-liners worth keeping:
+
+- **A VPS, stripped of marketing = Linux + sshd + a user + your key** — all four fit in a container. The login banner proved the two honest differences live: `6.12.76-linuxkit` = Docker Desktop's VM kernel (containers never bring their own — my "Debian VPS" is Debian userland on a borrowed kernel), `aarch64` = Apple Silicon.
+- **Two directions of trust in every SSH connection.** First the *server* proves itself — host key shown on first connect, TOFU'd into `~/.ssh/known_hosts` (on a real box you'd verify the fingerprint against the provider's console before typing yes). Then *you* prove yourself — challenge/response against `authorized_keys`; the private key never travels.
+- **The host key is born at image build** (apt installing openssh-server generates it) → `down`/`up` = same identity, silent connect; a *rebuild* that reruns the apt layer = new identity → `REMOTE HOST IDENTIFICATION HAS CHANGED`. Two readings: MITM on a real server, expected after your own rebuild. Fix: `ssh-keygen -R "[localhost]:9022"`.
+- **Image size sanity check:** 242MB disk / 53MB compressed — slim Debian + openssh/sudo/curl/vim/iproute2 deps. Fine: this image is meant to feel like a server, not be minimal.
+- **stop ≠ delete.** Files survive stop/start with NO volume because the container's writable layer (Lab 1's transparent sheet) persists as long as the *container* exists; only `rm`/`down` scrap it. `docker diff vps-lab` lists every A/C/D vs the image.
+- **`docker up`/`docker down` don't exist** — up/down are compose-only verbs. And compose has BOTH pairs: `up`/`down` = create/destroy, `stop`/`start` = power off/on. Didn't realize they were separate things for 6 years.
+- **`up` is declarative, `start` is imperative.** `up -d` = "make reality match the file" — creates, starts, recreates only what changed, or does nothing; always safe. `start` boots the *old* config even if the file changed. Same mindset as `kubectl apply` and `terraform apply` later — compose is the training wheels.
+- **Env vars are stamped at container CREATION.** stop/start — and even `docker compose restart` — keep the old `.env` values; only `up -d` recreates on a config diff. Verify what a running container really has: `docker inspect vps-lab --format '{{.Config.Env}}'`.
+- **PATH anatomy** (the one env var debian ships): six dirs = {`/usr/local`, `/usr`, `/`} × {`bin`, `sbin`}. `sbin` = admin/system tools (why commands "don't exist" for normal users), `/usr/local` = hand-installed software apt never touches — listed first so it wins. Order = priority, left to right; modern Debian symlinks `/bin` → `/usr/bin`. Lab 3's `ENV PATH` venv trick is this exact mechanism: prepend a folder so *your* python wins.
+
 ## What clicked
 
 -
