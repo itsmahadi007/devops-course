@@ -43,6 +43,19 @@ A progressive, hands-on course. Each section: **read** (`README.md` lesson) → 
 4. Keep every lab **$0 and local**. Real-cloud labs may exist only as clearly-marked OPTIONAL extras with same-day teardown instructions.
 5. Update the status table above + the progress checkboxes in `README.md` on every transition.
 
+## Live-session protocol (how labs actually run — established Labs 1–2)
+
+Mahadi works through labs in-terminal and pastes output into the chat. The rhythm:
+
+1. **He pastes terminal output** → explain what it shows in **easy words**: annotate the actual lines he saw, connect them back to earlier labs' concepts, use analogies (e.g. `docker stop` = "knock on the door, wait 10s, break it down"; cache = "ladder — break one rung, everything above rebuilds"). Plain language beats jargon; introduce the technical term after the intuition.
+2. **"update step N with this"** → fold that explanation back into the lab file as a `####` subsection at the relevant step, with good flow, so the lab is self-contained for future re-reads.
+3. **Something misbehaves during a lab** (races, stale processes, wrong assumptions in the lab itself) → treat it as a teachable moment, explain it, AND fix the lab file so future-him doesn't trip (e.g. added `sleep 2` + "two traps" note; replaced `touch` with a real content edit because Docker caches by checksum, not timestamp).
+4. **Verify questions get collapsible answers**: each question followed by `<details><summary>Answer (read after attempting aloud)</summary>...</details>` in the same easy style — hidden so from-memory drilling still works.
+5. **"lab N is done, update the checkpoints and notes"** → do BOTH:
+   - `notes.md`: append a dated **"Lab N digest (session summary)"** — one-liner takeaways from what was actually covered in session (including detours). Never fill his own-words sections (what clicked / confused / etc.) — those are his, and the section gate requires them.
+   - `checkpoint.md`: add explain-aloud items for material the session went deeper on than the original questions covered. Don't tick any boxes — he does that.
+6. **New labs / rewrites**: mental model first ("The mental map (read this first)" with an ASCII diagram), then steps where each command's output is pre-explained, in the same easy-words style.
+
 ## Lab & lesson style rules
 
 - Every lab: **Goal → Steps → Verify → Clean up.** Steps are copy-paste-able for macOS/zsh. Verify = a command whose output proves it worked.
@@ -57,3 +70,4 @@ A progressive, hands-on course. Each section: **read** (`README.md` lesson) → 
 - **Public repo — no secrets, ever.** No real keys, tokens, .env values, or SSH private keys in commits (`.gitignore` covers `vps-lab/keys/`, `.env`). Placeholder values only.
 - Don't touch `capstone/` beyond what the current section's labs require — its evolution IS the curriculum.
 - Latest stable versions by default for every tool introduced.
+- **Host ports: use the 9000 series in all labs** (`-p 9000:8000` style). Mahadi's real dev stack (cashlessai, always running) occupies the 8000-series plus 5433, 5678–5690, 6379, 6432 on this machine. Container-side ports stay conventional (8000, 6379, 5432…) — only the host side of any published port moves to 9000+. Services that don't need host access get no `ports:` at all.
