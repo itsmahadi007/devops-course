@@ -182,7 +182,8 @@ jobs:
       - uses: actions/checkout@v7
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v8
+        uses: astral-sh/setup-uv@v8.3.2   # NOTE: astral-sh publishes no floating `v8` major tag —
+                                          # only exact tags (v8.3.2) + a floating v7. `@v8` fails to resolve.
         with:
           enable-cache: true
           cache-dependency-glob: "capstone/uv.lock"
