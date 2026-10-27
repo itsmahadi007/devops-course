@@ -29,6 +29,11 @@ Pass every task **from memory** — no peeking at the labs. If you have to peek,
 - [ ] Why a dedicated deploy key in a secret instead of your personal SSH key? What's the blast radius if it leaks?
 - [ ] Trace the port chain `Mac:9030 → vps-lab:8080 → inner:8000` and say where each hop's mapping is defined.
 - [ ] Branch protection vs CI-that-just-runs: what does the ruleset add, and which check should gate merges — `test` or `deploy`? Why?
+- [ ] `gh run watch` showed every step ✓ but you still couldn't see what a step *printed*. Why? Which command shows the actual step output, and what does the single ✓ from `gh run list --limit 1` actually summarize across a multi-job run?
+- [ ] Dependabot is separate from any workflow you write — what triggers it, and what does it read to decide an update? (Bonus: a project named `capstone` failed with *"your project requires your project"* — explain the name-collision mechanism and the one-line fix.)
+- [ ] `strategy.matrix` with `os: [ubuntu-latest, macos-latest]` — how many machines run, where do they physically run (trick: is `macos-latest` your Mac?), and what does `fail-fast: true` do when one leg fails? If Ubuntu needed `apt` and macOS needed `brew`, name three ways to handle the split and when you'd pick each.
+- [ ] `uv sync --frozen` — what exactly does `--frozen` guarantee, and what does it do when `pyproject.toml` and `uv.lock` disagree? Why is that failure a feature, not an annoyance?
+- [ ] CI failed with *"unable to find version `v8`"* at "Set up job" — before any of your code ran. What does that failure point tell you about the cause, and why did `@v8` resolve for `actions/checkout` but not for `astral-sh/setup-uv`?
 
 ## Gate
 

@@ -207,6 +207,40 @@ Pre-read, top to bottom:
 - **`setup-uv` with `enable-cache`** — remember the empty hotel room: every run would re-download every wheel. This caches uv's download cache in GitHub's cache service between runs, keyed by a hash of `uv.lock` — lockfile unchanged → warm cache → `uv sync` takes ~1–2s. Same warehouse Lab 4 will push Docker *layers* into.
 - **`uv sync --frozen`** — installs the locked versions and **fails if `pyproject.toml` and `uv.lock` disagree**. uv also auto-installs Python 3.14 itself here (the runner's system Python is irrelevant — uv manages its own interpreters; one less thing to matrix over).
 
+#### Where do these two machines actually run?
+
+Both. `ubuntu-latest` **and** `macos-latest` are **GitHub-hosted** runners — fresh, disposable VMs in GitHub's cloud (yes, GitHub runs a fleet of real Apple-silicon Macs for the macOS ones). **Neither touches your laptop.** The only way a job lands on *your* Mac is if you register it as a **self-hosted** runner and target it with `runs-on: [self-hosted, ...]` — that's a later lab in this section, needed because your `vps-lab` deploy must reach a box on your local network that GitHub's cloud can't. Until then: everything runs in GitHub's cloud. (The tell that macOS is a blank cloud machine, not yours: it had to `Install uv` from scratch — your real Mac already has it.)
+
+#### When the two OSes need *different* setup
+
+A matrix is "same recipe, different oven." But sometimes Ubuntu needs `apt` and macOS needs `brew`. Three tools, simplest first — pick by how much differs:
+
+- **One or two steps differ → `if:` on the step.** Each leg carries its OS in the `runner.os` context (`Linux` / `macOS` / `Windows` — the OS *family*, not `ubuntu-latest`). A false `if:` **skips** the step (greyed out in the UI), never fails it:
+  ```yaml
+  - name: Linux-only dep
+    if: runner.os == 'Linux'
+    run: sudo apt-get install -y foo
+  - name: macOS-only dep
+    if: runner.os == 'macOS'
+    run: brew install foo
+  ```
+- **Only a *value* differs (package name, path, flag) → `matrix.include`.** List each leg explicitly and hang extra keys off it, then use one step. (`exclude:` is the sibling that drops specific combinations from a multiplied matrix.):
+  ```yaml
+  strategy:
+    matrix:
+      include:
+        - os: ubuntu-latest
+          install: sudo apt-get install -y foo
+        - os: macos-latest
+          install: brew install foo
+  runs-on: ${{ matrix.os }}
+  steps:
+    - run: ${{ matrix.install }}   # right command per leg, one step
+  ```
+- **The whole recipe differs → stop using a matrix, write two jobs** (`test-linux:` + `test-mac:`). More honest and readable than a matrix drowning in `if:`s.
+
+For *this* capstone you need none of it — `uv`/`ruff`/`pytest` behave identically on both OSes (that's uv's job: paper over OS differences). The macOS leg is here to *show* a matrix working, not because the setup diverges. Reach for `if: runner.os` the day a real cross-OS dependency appears.
+
 ### 6. Push and watch the fan-out
 
 ```bash

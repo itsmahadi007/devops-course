@@ -41,3 +41,37 @@ jobs:
 
       - name: Test
         run: uv run pytest -v
+
+  build:
+    needs: test                     # gate: only run if the test job went green
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read                # to checkout
+      packages: write               # to push to GHCR — the ONE new door
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compute image tags and labels
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ghcr.io/itsmahadi007/capstone
+          tags: |
+            type=sha
+            type=semver,pattern={{version}}
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push
+        uses: docker/build-push-action@v7
+        with:
+          context: capstone
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
